@@ -1,0 +1,29 @@
+name: Render PlantUML Diagrams
+
+on:
+  push:
+    paths:
+      - '**/*.puml'
+      - 'README.md'
+
+jobs:
+  render-diagrams:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Render PlantUML diagrams
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz default-jre
+          mkdir -p diagrams
+          java -jar plantuml.jar -tpng README.md
+
+      - name: Commit rendered diagrams
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add diagrams/
+          git commit -m 'Render PlantUML diagrams'
+          git push
