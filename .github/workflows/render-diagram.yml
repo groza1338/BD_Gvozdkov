@@ -13,12 +13,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
+      - name: Download PlantUML
+        run: curl -L https://sourceforge.net/projects/plantuml/files/latest/download -o plantuml.jar
+
       - name: Render PlantUML diagrams
         run: |
-          sudo apt-get update
-          sudo apt-get install -y graphviz default-jre
-          mkdir -p diagrams
-          java -jar plantuml.jar -tpng README.md
+          java -jar plantuml.jar -tpng -o ./diagrams README.md
 
       - name: Commit rendered diagrams
         run: |
