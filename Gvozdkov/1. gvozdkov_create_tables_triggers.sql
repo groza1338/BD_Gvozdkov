@@ -131,22 +131,23 @@ create table order_items
     total_amount integer
 );
 
-create table delivery
+CREATE TABLE delivery
 (
     id               serial
-        primary key,
-    order_id         integer               not null
-        references orders,
-    country          varchar(100)          not null,
-    city             varchar(100)          not null,
-    postal_code      varchar(20)           not null
-        constraint chk_delivery_postal_code
-            check ((postal_code)::text ~ '^[0-9]{5,6}$'::text),
-    street_name      varchar(255)          not null,
-    building_number  varchar(20)           not null,
-    apartment_number varchar(20)           not null,
-    delivery_date    timestamp             not null,
-    is_delivered     boolean default false not null
+        PRIMARY KEY,
+    order_id         integer               NOT NULL
+        REFERENCES public.orders,
+    country          varchar(100)          NOT NULL,
+    city             varchar(100)          NOT NULL,
+    postal_code      varchar(20)           NOT NULL
+        CONSTRAINT chk_delivery_postal_code
+            CHECK ((postal_code)::text ~ '^[0-9]{5,6}$'),
+    street_name      varchar(255)          NOT NULL,
+    building_number  varchar(20)           NOT NULL,
+    apartment_number varchar(20)           NOT NULL,
+    expected_delivery_date timestamp       NOT NULL,
+    actual_delivery_date timestamp,
+    is_delivered     boolean DEFAULT false NOT NULL
 );
 
 create function recalculate_total_amount_and_update_price() returns trigger
@@ -199,3 +200,20 @@ CREATE TRIGGER trg_check_card_expiration
 BEFORE INSERT OR UPDATE ON public.customer_cards
 FOR EACH ROW
 EXECUTE FUNCTION check_card_expiration();
+
+CREATE OR REPLACE FUNCTION update_is_delivered()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.actual_delivery_date IS NOT NULL THEN
+        NEW.is_delivered := TRUE;
+    ELSE
+        NEW.is_delivered := FALSE;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_update_is_delivered
+BEFORE INSERT OR UPDATE ON public.delivery
+FOR EACH ROW
+EXECUTE FUNCTION update_is_delivered();
