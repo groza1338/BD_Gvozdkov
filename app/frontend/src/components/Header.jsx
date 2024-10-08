@@ -1,32 +1,22 @@
 // Header.jsx
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
-import './Header.css';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-function Header() {
-  const [tables, setTables] = useState([]);
+function Header({ tables }) {
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    axios.get('http://127.0.0.1:8000/tables')
-      .then((response) => {
-        setTables(response.data.tables);
-      })
-      .catch((error) => {
-        console.error("Error fetching tables:", error);
-      });
-  }, []);
+  const handleTableSelect = (tableName) => {
+    navigate(`/admin/${tableName}`);
+  };
 
   return (
-    <div className="header-container">
-      <div className="header-scroll">
-        {tables.map((table, index) => (
-          <Link to={`/table/${table}`} key={index} className="header-item">
-            {table}
-          </Link>
-        ))}
-      </div>
-    </div>
+    <header style={{ display: 'flex', justifyContent: 'space-around', backgroundColor: '#f5f5f5', padding: '1em' }}>
+      {tables.map((table) => (
+        <button key={table} onClick={() => handleTableSelect(table)}>
+          {table}
+        </button>
+      ))}
+    </header>
   );
 }
 

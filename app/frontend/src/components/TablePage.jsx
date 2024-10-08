@@ -7,7 +7,7 @@ function TablePage() {
   const { tableName } = useParams();
   const [rows, setRows] = useState([]);
   const [newRow, setNewRow] = useState({});
-  const [idColumn, setIdColumn] = useState('id'); // Имя столбца ID по умолчанию
+  const [columns, setColumns] = useState([]);
 
   // Загрузка данных таблицы при загрузке компонента
   useEffect(() => {
@@ -19,13 +19,23 @@ function TablePage() {
       .then((response) => {
         setRows(response.data.rows);
         if (response.data.rows.length > 0) {
-          // Автоматически определяем название ID столбца
-          const potentialId = Object.keys(response.data.rows[0]).find(key => key.toLowerCase().includes("id"));
-          setIdColumn(potentialId || 'id');
+          setColumns(Object.keys(response.data.rows[0]));
+        } else {
+          fetchTableColumns(); // Загружаем столбцы, если данных нет
         }
       })
       .catch((error) => {
         console.error("Error fetching table data:", error);
+      });
+  };
+
+  const fetchTableColumns = () => {
+    axios.get(`http://127.0.0.1:8000/columns/${tableName}`)
+      .then((response) => {
+        setColumns(response.data.columns);
+      })
+      .catch((error) => {
+        console.error("Error fetching table columns:", error);
       });
   };
 
@@ -45,11 +55,6 @@ function TablePage() {
   };
 
   const handleDelete = (id) => {
-    if (!id) {
-      console.error("No ID found for deletion");
-      return;
-    }
-
     axios.delete(`http://127.0.0.1:8000/data/${tableName}/${id}`)
       .then(() => {
         fetchTableData();
@@ -67,7 +72,7 @@ function TablePage() {
       <table>
         <thead>
           <tr>
-            {rows.length > 0 && Object.keys(rows[0]).map((col, index) => (
+            {columns.map((col, index) => (
               <th key={index}>{col}</th>
             ))}
             <th>Действия</th>
@@ -75,18 +80,18 @@ function TablePage() {
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row[idColumn]}>
-              {Object.values(row).map((value, index) => (
-                <td key={index}>{value}</td>
+            <tr key={row.id}>
+              {columns.map((col, index) => (
+                <td key={index}>{row[col]}</td>
               ))}
               <td>
-                <button onClick={() => handleDelete(row[idColumn])}>Удалить</button>
+                <button onClick={() => handleDelete(row.id)}>Удалить</button>
               </td>
             </tr>
           ))}
           {/* Добавление новой строки */}
           <tr>
-            {rows.length > 0 && Object.keys(rows[0]).map((col, index) => (
+            {columns.map((col, index) => (
               <td key={index}>
                 <input
                   type="text"

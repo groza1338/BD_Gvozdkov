@@ -161,6 +161,13 @@ def read_table_data(table_name: str, db: Session = Depends(get_db)):
     rows = [dict(row._mapping) for row in result]
     return {"rows": rows}
 
+# Эндпоинт для получения столбцов таблицы
+@app.get("/columns/{table_name}")
+def get_table_columns(table_name: str):
+    inspector = inspect(engine)
+    columns = [column['name'] for column in inspector.get_columns(table_name)]
+    return {"columns": columns}
+
 # Эндпоинт для добавления строки
 @app.post("/data/{table_name}")
 def create_table_row(table_name: str, row_data: dict, db: Session = Depends(get_db)):
