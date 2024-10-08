@@ -1,9 +1,7 @@
 // App.js
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
-import Admin from './components/AdminPage.jsx';
 import CategoriesPage from './components/CategoriesPage';
 import TablePage from "./components/TablePage.jsx";
 import AdminPage from "./components/AdminPage.jsx";
