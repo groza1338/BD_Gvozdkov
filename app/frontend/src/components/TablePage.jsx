@@ -9,6 +9,7 @@ function TablePage() {
   const [rows, setRows] = useState([]);
   const [newRow, setNewRow] = useState({});
   const [columns, setColumns] = useState([]);
+  const [primaryKey, setPrimaryKey] = useState(null);
 
   useEffect(() => {
     fetchTableData();
@@ -19,7 +20,9 @@ function TablePage() {
       .then((response) => {
         setRows(response.data.rows);
         if (response.data.rows.length > 0) {
-          setColumns(Object.keys(response.data.rows[0]));
+          const columns = Object.keys(response.data.rows[0]);
+          setColumns(columns);
+          setPrimaryKey(columns[0]); // Допустим, первый ключ — это id, если его нет, можно уточнить
         } else {
           fetchTableColumns();
         }
@@ -33,6 +36,7 @@ function TablePage() {
     axios.get(`http://127.0.0.1:8000/columns/${tableName}`)
       .then((response) => {
         setColumns(response.data.columns);
+        setPrimaryKey(response.data.columns[0]); // Устанавливаем первый столбец как первичный ключ
       })
       .catch((error) => {
         console.error("Error fetching table columns:", error);
@@ -55,13 +59,17 @@ function TablePage() {
   };
 
   const handleDelete = (id) => {
-    axios.delete(`http://127.0.0.1:8000/data/${tableName}/${id}`)
-      .then(() => {
-        fetchTableData();
-      })
-      .catch((error) => {
-        console.error("Error deleting row:", error);
-      });
+    if (primaryKey && id !== undefined) {
+      axios.delete(`http://127.0.0.1:8000/data/${tableName}/${id}`)
+        .then(() => {
+          fetchTableData();
+        })
+        .catch((error) => {
+          console.error("Error deleting row:", error);
+        });
+    } else {
+      console.error("Primary key or id is undefined. Cannot delete row.");
+    }
   };
 
   return (
@@ -79,12 +87,12 @@ function TablePage() {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.id}>
+              <tr key={row[primaryKey]}>
                 {columns.map((col, index) => (
                   <td key={index}>{row[col]}</td>
                 ))}
                 <td>
-                  <button className="delete-btn" onClick={() => handleDelete(row.id)}>Удалить</button>
+                  <button className="delete-btn" onClick={() => handleDelete(row[primaryKey])}>Удалить</button>
                 </td>
               </tr>
             ))}
