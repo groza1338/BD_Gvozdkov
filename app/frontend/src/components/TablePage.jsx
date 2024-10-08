@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import './TablePage.css';
 
 function TablePage() {
   const { tableName } = useParams();
@@ -9,7 +10,6 @@ function TablePage() {
   const [newRow, setNewRow] = useState({});
   const [columns, setColumns] = useState([]);
 
-  // Загрузка данных таблицы при загрузке компонента
   useEffect(() => {
     fetchTableData();
   }, [tableName]);
@@ -21,7 +21,7 @@ function TablePage() {
         if (response.data.rows.length > 0) {
           setColumns(Object.keys(response.data.rows[0]));
         } else {
-          fetchTableColumns(); // Загружаем столбцы, если данных нет
+          fetchTableColumns();
         }
       })
       .catch((error) => {
@@ -65,47 +65,46 @@ function TablePage() {
   };
 
   return (
-    <div>
+    <div className="table-page">
       <h2>Таблица: {tableName}</h2>
-
-      {/* Отображение таблицы данных */}
-      <table>
-        <thead>
-          <tr>
-            {columns.map((col, index) => (
-              <th key={index}>{col}</th>
-            ))}
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.id}>
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
               {columns.map((col, index) => (
-                <td key={index}>{row[col]}</td>
+                <th key={index}>{col}</th>
+              ))}
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                {columns.map((col, index) => (
+                  <td key={index}>{row[col]}</td>
+                ))}
+                <td>
+                  <button className="delete-btn" onClick={() => handleDelete(row.id)}>Удалить</button>
+                </td>
+              </tr>
+            ))}
+            <tr>
+              {columns.map((col, index) => (
+                <td key={index}>
+                  <input
+                    type="text"
+                    value={newRow[col] || ''}
+                    onChange={(e) => handleInputChange(e, col)}
+                  />
+                </td>
               ))}
               <td>
-                <button onClick={() => handleDelete(row.id)}>Удалить</button>
+                <button className="add-btn" onClick={handleCreate}>Добавить</button>
               </td>
             </tr>
-          ))}
-          {/* Добавление новой строки */}
-          <tr>
-            {columns.map((col, index) => (
-              <td key={index}>
-                <input
-                  type="text"
-                  value={newRow[col] || ''}
-                  onChange={(e) => handleInputChange(e, col)}
-                />
-              </td>
-            ))}
-            <td>
-              <button onClick={handleCreate}>Добавить</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
