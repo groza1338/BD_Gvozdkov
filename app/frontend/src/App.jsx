@@ -1,21 +1,23 @@
-// App.jsx
+// App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
-import AdminPage from './components/AdminPage';
-import TablePage from './components/TablePage';
+import Admin from './components/AdminPage.jsx';
+import CategoriesPage from './components/CategoriesPage';
+import TablePage from "./components/TablePage.jsx";
+import AdminPage from "./components/AdminPage.jsx";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<AdminPage />}>
           <Route path=":tableName" element={<TablePage />} />
         </Route>
+        <Route path="/categories" element={<CategoriesPage />} />
       </Routes>
     </Router>
   );

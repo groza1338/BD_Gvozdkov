@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, status, Body, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -9,6 +9,7 @@ from passlib.context import CryptContext
 from database import SessionLocal, engine, Base
 from models import UserAccount
 from sqlalchemy import inspect, Table, MetaData
+import re
 
 # Конфигурация безопасности
 SECRET_KEY = "secretkey"
@@ -117,6 +118,56 @@ def login_for_access_token(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+# Модель регистрации пользователя
+class UserRegister(BaseModel):
+    username: str
+    password: str
+    email: EmailStr
+    first_name: str
+    last_name: str
+    phone: str
+    address: str
+
+# Эндпоинт для регистрации нового пользователя
+@app.post("/register", status_code=status.HTTP_201_CREATED)
+def register_user(user: UserRegister, db: Session = Depends(get_db)):
+    # Проверка на уникальность имени пользователя
+    existing_user = db.query(UserAccount).filter(UserAccount.username == user.username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username is already taken"
+        )
+
+    # Проверка на уникальность email
+    existing_email = db.query(UserAccount).filter(UserAccount.email == user.email).first()
+    if existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email is already registered"
+        )
+
+    # Хэшируем пароль
+    hashed_password = pwd_context.hash(user.password)
+
+    # Создаем новый объект пользователя
+    new_user = UserAccount(
+        username=user.username,
+        password=hashed_password,
+        email=user.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        phone=user.phone,
+        address=user.address,
+        role="customer"  # Присваиваем роль по умолчанию
+    )
+
+    # Добавляем пользователя в базу данных
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "User registered successfully"}
+
 # Эндпоинт для получения информации о текущем пользователе
 @app.get("/me", response_model=User)
 def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -197,3 +248,13 @@ def delete_table_item(table_name: str, item_id: int, db: Session = Depends(get_d
     db.execute(delete_stmt)
     db.commit()
     return {"message": f"Item with id {item_id} deleted from table '{table_name}'"}
+
+# Эндпоинт для получения полей таблицы useraccount
+@app.get("/useraccount/fields")
+def get_useraccount_fields():
+    inspector = inspect(engine)
+    columns = inspector.get_columns("useraccount")
+    # Получаем имена полей и их обязательность (nullable)
+    fields = [{"name": column["name"], "nullable": column["nullable"]}
+              for column in columns if column["name"] not in ["user_id", "role"]]
+    return {"fields": fields}
