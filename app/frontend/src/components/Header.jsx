@@ -1,43 +1,32 @@
+// Header.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import './Header.css';
 
 function Header() {
   const [tables, setTables] = useState([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchTables = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get('http://127.0.0.1:8000/tables', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    axios.get('http://127.0.0.1:8000/tables')
+      .then((response) => {
         setTables(response.data.tables);
-      } catch (error) {
-        console.error("Failed to fetch tables:", error);
-        navigate('/login');  // Редирект на логин, если запрос не удался
-      }
-    };
-
-    fetchTables();
-  }, [navigate]);
+      })
+      .catch((error) => {
+        console.error("Error fetching tables:", error);
+      });
+  }, []);
 
   return (
-    <header>
-      <h1>Admin Panel</h1>
-      <nav>
-        <ul>
-          {tables.map((table) => (
-            <li key={table}>
-              <button onClick={() => navigate(`/admin/${table}`)}>
-                {table}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </header>
+    <div className="header-container">
+      <div className="header-scroll">
+        {tables.map((table, index) => (
+          <Link to={`/table/${table}`} key={index} className="header-item">
+            {table}
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 

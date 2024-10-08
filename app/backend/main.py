@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from database import SessionLocal, engine, Base
 from models import UserAccount
-from sqlalchemy import inspect
+from sqlalchemy import inspect, Table, MetaData
 
 # Конфигурация безопасности
 SECRET_KEY = "secretkey"
@@ -20,6 +20,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app = FastAPI()
+
+metadata = MetaData()
+metadata.reflect(bind=engine)
 
 # Конфигурация CORS
 origins = [
@@ -142,3 +145,48 @@ def get_tables(db: Session = Depends(get_db)):
     inspector = inspect(engine)
     tables = inspector.get_table_names()
     return {"tables": tables}
+
+# Эндпоинт для получения данных таблицы
+@app.get("/data/{table_name}")
+def read_table_data(table_name: str, db: Session = Depends(get_db)):
+    # Проверяем, существует ли таблица
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
+
+    table = Table(table_name, metadata, autoload_with=engine)
+    query = db.query(table).statement
+    result = db.execute(query).fetchall()
+
+    # Преобразуем результат в список словарей
+    rows = [dict(row._mapping) for row in result]
+    return {"rows": rows}
+
+# Эндпоинт для добавления строки
+@app.post("/data/{table_name}")
+def create_table_row(table_name: str, row_data: dict, db: Session = Depends(get_db)):
+    table = Table(table_name, metadata, autoload_with=engine)
+    insert_stmt = table.insert().values(**row_data)
+    db.execute(insert_stmt)
+    db.commit()
+    return {"message": "Row added successfully"}
+
+
+# Эндпоинт для удаления записи
+@app.delete("/data/{table_name}/{item_id}")
+def delete_table_item(table_name: str, item_id: int, db: Session = Depends(get_db)):
+    # Проверяем, существует ли таблица
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
+
+    table = Table(table_name, metadata, autoload_with=engine)
+
+    # Проверяем, что строка существует
+    stmt = db.query(table).filter(table.c[table.primary_key.columns.keys()[0]] == item_id)
+    if not db.query(stmt.exists()).scalar():
+        raise HTTPException(status_code=404, detail=f"Item with id {item_id} not found in table '{table_name}'")
+
+    # Выполняем удаление
+    delete_stmt = table.delete().where(table.c[table.primary_key.columns.keys()[0]] == item_id)
+    db.execute(delete_stmt)
+    db.commit()
+    return {"message": f"Item with id {item_id} deleted from table '{table_name}'"}
