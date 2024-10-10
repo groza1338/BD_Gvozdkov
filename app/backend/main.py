@@ -258,3 +258,23 @@ def get_useraccount_fields():
     fields = [{"name": column["name"], "nullable": column["nullable"]}
               for column in columns if column["name"] not in ["user_id", "role"]]
     return {"fields": fields}
+
+
+# Эндпоинт для обновления строки
+@app.put("/data/{table_name}/{item_id}")
+def update_table_row(table_name: str, item_id: int, row_data: dict, db: Session = Depends(get_db)):
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
+
+    table = Table(table_name, metadata, autoload_with=engine)
+
+    # Проверяем, что строка существует
+    stmt = db.query(table).filter(table.c[table.primary_key.columns.keys()[0]] == item_id)
+    if not db.query(stmt.exists()).scalar():
+        raise HTTPException(status_code=404, detail=f"Item with id {item_id} not found in table '{table_name}'")
+
+    # Обновляем строку
+    update_stmt = table.update().where(table.c[table.primary_key.columns.keys()[0]] == item_id).values(**row_data)
+    db.execute(update_stmt)
+    db.commit()
+    return {"message": "Row updated successfully"}

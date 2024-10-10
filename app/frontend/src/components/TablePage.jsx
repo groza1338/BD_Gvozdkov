@@ -10,6 +10,8 @@ function TablePage() {
   const [newRow, setNewRow] = useState({});
   const [columns, setColumns] = useState([]);
   const [primaryKey, setPrimaryKey] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editRow, setEditRow] = useState({});
 
   useEffect(() => {
     fetchTableData();
@@ -72,6 +74,27 @@ function TablePage() {
     }
   };
 
+  const startEditRow = (row) => {
+    setEditRow(row);
+    setIsEditing(true);
+  };
+
+  const handleEditChange = (e, column) => {
+    setEditRow({ ...editRow, [column]: e.target.value });
+  };
+
+  const handleEditSave = () => {
+    const id = editRow[primaryKey];
+    axios.put(`http://127.0.0.1:8000/data/${tableName}/${id}`, editRow)
+      .then(() => {
+        fetchTableData();
+        setIsEditing(false);
+      })
+      .catch((error) => {
+        console.error("Error updating row:", error);
+      });
+  };
+
   return (
     <div className="table-page">
       <h2>Таблица: {tableName}</h2>
@@ -92,6 +115,7 @@ function TablePage() {
                   <td key={index}>{row[col]}</td>
                 ))}
                 <td>
+                  <button className="edit-btn" onClick={() => startEditRow(row)}>Редактировать</button>
                   <button className="delete-btn" onClick={() => handleDelete(row[primaryKey])}>Удалить</button>
                 </td>
               </tr>
@@ -113,6 +137,24 @@ function TablePage() {
           </tbody>
         </table>
       </div>
+
+      {isEditing && (
+        <div className="edit-modal">
+          <h3>Редактирование записи</h3>
+          {columns.map((col, index) => (
+            <div key={index}>
+              <label>{col}</label>
+              <input
+                type="text"
+                value={editRow[col] || ''}
+                onChange={(e) => handleEditChange(e, col)}
+              />
+            </div>
+          ))}
+          <button onClick={handleEditSave}>Сохранить</button>
+          <button onClick={() => setIsEditing(false)}>Отмена</button>
+        </div>
+      )}
     </div>
   );
 }
