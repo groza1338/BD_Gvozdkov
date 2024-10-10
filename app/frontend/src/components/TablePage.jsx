@@ -12,6 +12,7 @@ function TablePage() {
   const [primaryKey, setPrimaryKey] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editRow, setEditRow] = useState({});
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchTableData();
@@ -24,7 +25,7 @@ function TablePage() {
         if (response.data.rows.length > 0) {
           const columns = Object.keys(response.data.rows[0]);
           setColumns(columns);
-          setPrimaryKey(columns[0]); // Допустим, первый ключ — это id, если его нет, можно уточнить
+          setPrimaryKey(columns[0]);
         } else {
           fetchTableColumns();
         }
@@ -38,7 +39,7 @@ function TablePage() {
     axios.get(`http://127.0.0.1:8000/columns/${tableName}`)
       .then((response) => {
         setColumns(response.data.columns);
-        setPrimaryKey(response.data.columns[0]); // Устанавливаем первый столбец как первичный ключ
+        setPrimaryKey(response.data.columns[0]);
       })
       .catch((error) => {
         console.error("Error fetching table columns:", error);
@@ -50,13 +51,22 @@ function TablePage() {
   };
 
   const handleCreate = () => {
-    axios.post(`http://127.0.0.1:8000/data/${tableName}`, newRow)
+    const dataToSubmit = { ...newRow };
+    delete dataToSubmit[primaryKey]; // Убираем primaryKey из данных, если оно существует
+
+    axios.post(`http://127.0.0.1:8000/data/${tableName}`, dataToSubmit)
       .then(() => {
         fetchTableData();
         setNewRow({});
+        setError(null); // Сбрасываем ошибки после успешного запроса
       })
       .catch((error) => {
         console.error("Error creating row:", error);
+        if (error.response && error.response.data && error.response.data.detail) {
+          setError(error.response.data.detail); // Устанавливаем ошибку
+        } else {
+          setError("An unexpected error occurred.");
+        }
       });
   };
 
@@ -68,6 +78,11 @@ function TablePage() {
         })
         .catch((error) => {
           console.error("Error deleting row:", error);
+          if (error.response && error.response.data && error.response.data.detail) {
+            setError(error.response.data.detail);
+          } else {
+            setError("An unexpected error occurred.");
+          }
         });
     } else {
       console.error("Primary key or id is undefined. Cannot delete row.");
@@ -89,15 +104,22 @@ function TablePage() {
       .then(() => {
         fetchTableData();
         setIsEditing(false);
+        setError(null); // Сбрасываем ошибки после успешного запроса
       })
       .catch((error) => {
         console.error("Error updating row:", error);
+        if (error.response && error.response.data && error.response.data.detail) {
+          setError(error.response.data.detail);
+        } else {
+          setError("An unexpected error occurred.");
+        }
       });
   };
 
   return (
     <div className="table-page">
       <h2>Таблица: {tableName}</h2>
+      {error && <div className="error-message">{error}</div>}
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -122,13 +144,17 @@ function TablePage() {
             ))}
             <tr>
               {columns.map((col, index) => (
-                <td key={index}>
-                  <input
-                    type="text"
-                    value={newRow[col] || ''}
-                    onChange={(e) => handleInputChange(e, col)}
-                  />
-                </td>
+                col === primaryKey ? (
+                  <td key={index}><em>Auto-generated</em></td>
+                ) : (
+                  <td key={index}>
+                    <input
+                      type="text"
+                      value={newRow[col] || ''}
+                      onChange={(e) => handleInputChange(e, col)}
+                    />
+                  </td>
+                )
               ))}
               <td>
                 <button className="add-btn" onClick={handleCreate}>Добавить</button>
@@ -148,6 +174,7 @@ function TablePage() {
                 type="text"
                 value={editRow[col] || ''}
                 onChange={(e) => handleEditChange(e, col)}
+                disabled={col === primaryKey}
               />
             </div>
           ))}

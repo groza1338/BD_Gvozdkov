@@ -1,5 +1,4 @@
-// App.js
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
 import CategoriesPage from './components/CategoriesPage';
@@ -16,6 +15,9 @@ function App() {
           <Route path=":tableName" element={<TablePage />} />
         </Route>
         <Route path="/categories" element={<CategoriesPage />} />
+
+        {/* Добавляем редирект с "/" на "/login" */}
+        <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
   );

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, status, Body, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ValidationError, validator
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -26,9 +26,7 @@ metadata = MetaData()
 metadata.reflect(bind=engine)
 
 # Конфигурация CORS
-origins = [
-    "*"
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,15 +36,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Модель токена
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 # Модель пользователя
 class User(BaseModel):
     username: str
     role: str
+
 
 # Функция для создания токена
 def create_access_token(data: dict, expires_delta: timedelta):
@@ -55,16 +56,20 @@ def create_access_token(data: dict, expires_delta: timedelta):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
 # Функция для проверки пароля
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
 
 # Функция для хэширования пароля
 def get_password_hash(password):
     return pwd_context.hash(password)
 
+
 # Инициализация базы данных
 Base.metadata.create_all(bind=engine)
+
 
 # Функция для получения сессии
 def get_db():
@@ -73,6 +78,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 # Функция для создания или обновления учетной записи администратора
 @app.on_event("startup")
@@ -99,6 +105,7 @@ def create_or_update_admin_account():
     finally:
         db.close()
 
+
 # Эндпоинт для авторизации
 @app.post("/token", response_model=Token)
 def login_for_access_token(
@@ -113,12 +120,13 @@ def login_for_access_token(
             detail="Incorrect username or password"
         )
     access_token = create_access_token(
-        data={"sub": username, "role": user.role.value},  # Преобразуем role в строку
+        data={"sub": username, "role": user.role.value},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-# Модель регистрации пользователя
+
+# Модель регистрации пользователя с валидаторами
 class UserRegister(BaseModel):
     username: str
     password: str
@@ -128,23 +136,38 @@ class UserRegister(BaseModel):
     phone: str
     address: str
 
-# Эндпоинт для регистрации нового пользователя
+    @validator("username")
+    def validate_username(cls, v):
+        if not re.match("^[a-zA-Z0-9_]+$", v):
+            raise ValueError("Username must contain only letters, numbers, and underscores")
+        return v
+
+    @validator("password")
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters long")
+        return v
+
+
+# Эндпоинт для регистрации нового пользователя с проверкой ошибок
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(user: UserRegister, db: Session = Depends(get_db)):
+    errors = []
+
     # Проверка на уникальность имени пользователя
     existing_user = db.query(UserAccount).filter(UserAccount.username == user.username).first()
     if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username is already taken"
-        )
+        errors.append("Username is already taken")
 
     # Проверка на уникальность email
     existing_email = db.query(UserAccount).filter(UserAccount.email == user.email).first()
     if existing_email:
+        errors.append("Email is already registered")
+
+    if errors:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email is already registered"
+            detail=errors
         )
 
     # Хэшируем пароль
@@ -159,7 +182,7 @@ def register_user(user: UserRegister, db: Session = Depends(get_db)):
         last_name=user.last_name,
         phone=user.phone,
         address=user.address,
-        role="customer"  # Присваиваем роль по умолчанию
+        role="customer"
     )
 
     # Добавляем пользователя в базу данных
@@ -167,6 +190,7 @@ def register_user(user: UserRegister, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return {"message": "User registered successfully"}
+
 
 # Эндпоинт для получения информации о текущем пользователе
 @app.get("/me", response_model=User)
@@ -200,17 +224,14 @@ def get_tables(db: Session = Depends(get_db)):
 # Эндпоинт для получения данных таблицы
 @app.get("/data/{table_name}")
 def read_table_data(table_name: str, db: Session = Depends(get_db)):
-    # Проверяем, существует ли таблица
     if table_name not in metadata.tables:
         raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
-
     table = Table(table_name, metadata, autoload_with=engine)
     query = db.query(table).statement
     result = db.execute(query).fetchall()
-
-    # Преобразуем результат в список словарей
     rows = [dict(row._mapping) for row in result]
     return {"rows": rows}
+
 
 # Эндпоинт для получения столбцов таблицы
 @app.get("/columns/{table_name}")
@@ -219,31 +240,70 @@ def get_table_columns(table_name: str):
     columns = [column['name'] for column in inspector.get_columns(table_name)]
     return {"columns": columns}
 
+
 # Эндпоинт для добавления строки
 @app.post("/data/{table_name}")
 def create_table_row(table_name: str, row_data: dict, db: Session = Depends(get_db)):
     table = Table(table_name, metadata, autoload_with=engine)
+
+    # Проверяем автоинкрементные столбцы и исключаем их из запроса
+    auto_increment_columns = [col.name for col in table.columns if col.autoincrement]
+
+    # Убираем все автоинкрементные поля, если они есть в данных запроса
+    for col in auto_increment_columns:
+        row_data.pop(col, None)
+
+    # Получаем обязательные столбцы и проверяем, что все обязательные поля заполнены
+    required_columns = [col.name for col in table.columns if
+                        not col.nullable and col.default is None and not col.autoincrement]
+    missing_columns = [col for col in required_columns if col not in row_data]
+
+    if missing_columns:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing required fields: {', '.join(missing_columns)}"
+        )
+
     insert_stmt = table.insert().values(**row_data)
     db.execute(insert_stmt)
     db.commit()
     return {"message": "Row added successfully"}
 
 
-# Эндпоинт для удаления записи
-@app.delete("/data/{table_name}/{item_id}")
-def delete_table_item(table_name: str, item_id: int, db: Session = Depends(get_db)):
-    # Проверяем, существует ли таблица
+# Эндпоинт для обновления строки с проверкой ошибок
+@app.put("/data/{table_name}/{item_id}")
+def update_table_row(table_name: str, item_id: int, row_data: dict, db: Session = Depends(get_db)):
     if table_name not in metadata.tables:
         raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
 
     table = Table(table_name, metadata, autoload_with=engine)
-
-    # Проверяем, что строка существует
     stmt = db.query(table).filter(table.c[table.primary_key.columns.keys()[0]] == item_id)
     if not db.query(stmt.exists()).scalar():
         raise HTTPException(status_code=404, detail=f"Item with id {item_id} not found in table '{table_name}'")
 
-    # Выполняем удаление
+    try:
+        update_stmt = table.update().where(table.c[table.primary_key.columns.keys()[0]] == item_id).values(**row_data)
+        db.execute(update_stmt)
+        db.commit()
+        return {"message": "Row updated successfully"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+# Эндпоинт для удаления записи
+@app.delete("/data/{table_name}/{item_id}")
+def delete_table_item(table_name: str, item_id: int, db: Session = Depends(get_db)):
+    if table_name not in metadata.tables:
+        raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
+
+    table = Table(table_name, metadata, autoload_with=engine)
+    stmt = db.query(table).filter(table.c[table.primary_key.columns.keys()[0]] == item_id)
+    if not db.query(stmt.exists()).scalar():
+        raise HTTPException(status_code=404, detail=f"Item with id {item_id} not found in table '{table_name}'")
+
     delete_stmt = table.delete().where(table.c[table.primary_key.columns.keys()[0]] == item_id)
     db.execute(delete_stmt)
     db.commit()
@@ -254,27 +314,5 @@ def delete_table_item(table_name: str, item_id: int, db: Session = Depends(get_d
 def get_useraccount_fields():
     inspector = inspect(engine)
     columns = inspector.get_columns("useraccount")
-    # Получаем имена полей и их обязательность (nullable)
-    fields = [{"name": column["name"], "nullable": column["nullable"]}
-              for column in columns if column["name"] not in ["user_id", "role"]]
+    fields = [{"name": column["name"], "nullable": column["nullable"]} for column in columns if column["name"] not in ["user_id", "role"]]
     return {"fields": fields}
-
-
-# Эндпоинт для обновления строки
-@app.put("/data/{table_name}/{item_id}")
-def update_table_row(table_name: str, item_id: int, row_data: dict, db: Session = Depends(get_db)):
-    if table_name not in metadata.tables:
-        raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
-
-    table = Table(table_name, metadata, autoload_with=engine)
-
-    # Проверяем, что строка существует
-    stmt = db.query(table).filter(table.c[table.primary_key.columns.keys()[0]] == item_id)
-    if not db.query(stmt.exists()).scalar():
-        raise HTTPException(status_code=404, detail=f"Item with id {item_id} not found in table '{table_name}'")
-
-    # Обновляем строку
-    update_stmt = table.update().where(table.c[table.primary_key.columns.keys()[0]] == item_id).values(**row_data)
-    db.execute(update_stmt)
-    db.commit()
-    return {"message": "Row updated successfully"}
