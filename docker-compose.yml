@@ -11,8 +11,7 @@ services:
       - "5434:5432"
     volumes:
       - postgres_data_for_labs:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Монтируем ваш SQL скрипт в каталог инициализации
-      - /Users/groza_1337/PycharmProjects/BD_Gvozdkov/laba_5:/csv_files
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Монтируем ваш SQL скрипт в каталог инициализации      №- /Users/groza_1337/PycharmProjects/BD_Gvozdkov/laba_5:/csv_files
 
 
 volumes:
