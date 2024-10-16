@@ -1,4 +1,3 @@
-// TablePage.jsx
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
@@ -17,6 +16,17 @@ function TablePage() {
   useEffect(() => {
     fetchTableData();
   }, [tableName]);
+
+  // Таймер для исчезновения ошибки
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 10000); // 10 секунд
+
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const fetchTableData = () => {
     axios.get(`http://127.0.0.1:8000/data/${tableName}`)
@@ -52,18 +62,17 @@ function TablePage() {
 
   const handleCreate = () => {
     const dataToSubmit = { ...newRow };
-    delete dataToSubmit[primaryKey]; // Убираем primaryKey из данных, если оно существует
+    delete dataToSubmit[primaryKey];
 
     axios.post(`http://127.0.0.1:8000/data/${tableName}`, dataToSubmit)
       .then(() => {
         fetchTableData();
         setNewRow({});
-        setError(null); // Сбрасываем ошибки после успешного запроса
       })
       .catch((error) => {
         console.error("Error creating row:", error);
         if (error.response && error.response.data && error.response.data.detail) {
-          setError(error.response.data.detail); // Устанавливаем ошибку
+          setError(error.response.data.detail);
         } else {
           setError("An unexpected error occurred.");
         }
@@ -104,7 +113,6 @@ function TablePage() {
       .then(() => {
         fetchTableData();
         setIsEditing(false);
-        setError(null); // Сбрасываем ошибки после успешного запроса
       })
       .catch((error) => {
         console.error("Error updating row:", error);
