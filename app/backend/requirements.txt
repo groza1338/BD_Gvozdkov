@@ -8,3 +8,4 @@ python-jose
 psycopg2
 email-validator
 bcrypt
+deep-translator
