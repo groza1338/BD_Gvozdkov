@@ -10,6 +10,7 @@ from database import SessionLocal, engine, Base
 from models import UserAccount
 from sqlalchemy import inspect, Table, MetaData
 import re
+from deep_translator import GoogleTranslator
 
 # Конфигурация безопасности
 SECRET_KEY = "secretkey"
@@ -287,9 +288,12 @@ def update_table_row(table_name: str, item_id: int, row_data: dict, db: Session 
         db.commit()
         return {"message": "Row updated successfully"}
     except Exception as e:
+        error_in_English = e.args[0]
+        error_in_Russian = GoogleTranslator(source='en', target='ru').translate(error_in_English)
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail=str(error_in_Russian if error_in_Russian else e.args[0])
         )
 
 
