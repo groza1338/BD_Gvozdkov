@@ -5,6 +5,9 @@ import CategoriesPage from './components/CategoriesPage';
 import TablePage from "./components/TablePage.jsx";
 import AdminPage from "./components/AdminPage.jsx";
 
+
+
+
 function App() {
   return (
     <Router>

@@ -4,13 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import styles from './Login.module.css';
 
 function Register() {
+  const apiUrl = import.meta.env.DEV
+  ? 'http://localhost:8000'   // Если мы в режиме разработки
+  : 'api';  // Если мы в продакшене
   const [formData, setFormData] = useState({});
   const [fields, setFields] = useState([]);
   const [errorMessages, setErrorMessages] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/useraccount/fields')
+    axios.get(`${apiUrl}/useraccount/fields`)
       .then((response) => {
         const initialFormData = {};
         response.data.fields.forEach((field) => {
@@ -35,7 +38,7 @@ function Register() {
     e.preventDefault();
     setErrorMessages([]); // Сброс ошибок перед отправкой
 
-    axios.post('http://127.0.0.1:8000/register', formData)
+    axios.post(`${apiUrl}/register`, formData)
       .then((response) => {
         alert("Registration successful!");
         navigate('/login');

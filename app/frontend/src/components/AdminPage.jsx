@@ -6,10 +6,13 @@ import Header from './Header';
 
 function AdminPage() {
   const [tables, setTables] = useState([]);
+  const apiUrl = import.meta.env.DEV
+  ? 'http://localhost:8000'   // Если мы в режиме разработки
+  : 'api';  // Если мы в продакшене
 
   useEffect(() => {
     // Загружаем список таблиц из API
-    axios.get('http://127.0.0.1:8000/tables')
+    axios.get(`${apiUrl}/tables`)
       .then((response) => {
         setTables(response.data.tables);
       })

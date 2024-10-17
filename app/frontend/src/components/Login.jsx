@@ -5,6 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import styles from './Login.module.css';
 
 function Login() {
+  const apiUrl = import.meta.env.DEV
+  ? 'http://localhost:8000'   // Если мы в режиме разработки
+  : 'api';  // Если мы в продакшене
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
@@ -12,7 +15,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://127.0.0.1:8000/token', {
+      const response = await axios.post(`${apiUrl}/token`, {
         username,
         password
       });
@@ -21,7 +24,7 @@ function Login() {
       localStorage.setItem('token', token);
 
       // Проверка роли пользователя
-      const userInfoResponse = await axios.get('http://127.0.0.1:8000/me', {
+      const userInfoResponse = await axios.get(`${apiUrl}/me`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

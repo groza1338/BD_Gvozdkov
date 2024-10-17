@@ -4,6 +4,9 @@ import { useParams } from 'react-router-dom';
 import './TablePage.css';
 
 function TablePage() {
+  const apiUrl = import.meta.env.DEV
+  ? 'http://localhost:8000'   // Если мы в режиме разработки
+  : 'api';  // Если мы в продакшене
   const { tableName } = useParams();
   const [rows, setRows] = useState([]);
   const [newRow, setNewRow] = useState({});
@@ -29,7 +32,7 @@ function TablePage() {
   }, [error]);
 
   const fetchTableData = () => {
-    axios.get(`http://127.0.0.1:8000/data/${tableName}`)
+    axios.get(`${apiUrl}/data/${tableName}`)
       .then((response) => {
         setRows(response.data.rows);
         if (response.data.rows.length > 0) {
@@ -46,7 +49,7 @@ function TablePage() {
   };
 
   const fetchTableColumns = () => {
-    axios.get(`http://127.0.0.1:8000/columns/${tableName}`)
+    axios.get(`${apiUrl}/columns/${tableName}`)
       .then((response) => {
         setColumns(response.data.columns);
         setPrimaryKey(response.data.columns[0]);
@@ -64,7 +67,7 @@ function TablePage() {
     const dataToSubmit = { ...newRow };
     delete dataToSubmit[primaryKey];
 
-    axios.post(`http://127.0.0.1:8000/data/${tableName}`, dataToSubmit)
+    axios.post(`${apiUrl}/data/${tableName}`, dataToSubmit)
       .then(() => {
         fetchTableData();
         setNewRow({});
@@ -81,7 +84,7 @@ function TablePage() {
 
   const handleDelete = (id) => {
     if (primaryKey && id !== undefined) {
-      axios.delete(`http://127.0.0.1:8000/data/${tableName}/${id}`)
+      axios.delete(`${apiUrl}/data/${tableName}/${id}`)
         .then(() => {
           fetchTableData();
         })
@@ -109,7 +112,7 @@ function TablePage() {
 
   const handleEditSave = () => {
     const id = editRow[primaryKey];
-    axios.put(`http://127.0.0.1:8000/data/${tableName}/${id}`, editRow)
+    axios.put(`${apiUrl}/data/${tableName}/${id}`, editRow)
       .then(() => {
         fetchTableData();
         setIsEditing(false);

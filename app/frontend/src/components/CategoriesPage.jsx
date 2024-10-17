@@ -4,9 +4,11 @@ import axios from 'axios';
 
 function CategoriesPage() {
   const [categories, setCategories] = useState([]);
-
+    const apiUrl = import.meta.env.DEV
+  ? 'http://localhost:8000'   // Если мы в режиме разработки
+  : 'api';  // Если мы в продакшене
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/data/category')
+    axios.get(`${apiUrl}/data/category`)
       .then((response) => {
         setCategories(response.data.rows);
       })
