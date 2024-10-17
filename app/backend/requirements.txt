@@ -5,7 +5,7 @@ uvicorn
 passlib
 sqlalchemy~=2.0.35
 python-jose
-psycopg2
+psycopg2-binary
 email-validator
 bcrypt
 deep-translator
