@@ -14,10 +14,21 @@ function TablePage() {
   const [editRow, setEditRow] = useState({});
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({});
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
+  const limit = 50;
+
+  useEffect(() => {
+    // Сброс offset при изменении tableName
+    setOffset(0);
+    setRows([]); // Очищаем текущие данные перед загрузкой новой таблицы
+    setHasMore(true); // Сбрасываем состояние пагинации
+  }, [tableName]);
 
   useEffect(() => {
     fetchTableData();
-  }, [tableName, filters]);
+  }, [tableName, filters, offset]);
 
   useEffect(() => {
     if (error) {
@@ -33,11 +44,16 @@ function TablePage() {
       .map(([key, value]) => `${key}=${value}`)
       .join(',');
 
-    axios.get(`${apiUrl}/data/${tableName}`, { params: { filters: filterParams } })
+    axios.get(`${apiUrl}/data/${tableName}`, {
+      params: { filters: filterParams, limit, offset }
+    })
       .then((response) => {
-        setRows(response.data.rows);
-        if (response.data.rows.length > 0) {
-          const columns = Object.keys(response.data.rows[0]);
+        const newRows = response.data.rows;
+        if (newRows.length < limit) setHasMore(false);
+        setRows(offset === 0 ? newRows : [...rows, ...newRows]);
+
+        if (newRows.length > 0) {
+          const columns = Object.keys(newRows[0]);
           setColumns(columns);
           setPrimaryKey(columns[0]);
         } else {
@@ -122,6 +138,10 @@ function TablePage() {
   }
 };
 
+
+const loadMoreRows = () => {
+    setOffset(offset + limit);
+  };
   return (
     <div className="table-page">
       <h2>Таблица: {tableName}</h2>
@@ -177,6 +197,7 @@ function TablePage() {
             </tr>
           </tbody>
         </table>
+        {hasMore && <button onClick={loadMoreRows} className="load-more-btn">Загрузить еще</button>}
       </div>
       {isEditing && (
         <div className="edit-modal">

@@ -226,23 +226,29 @@ def get_tables(db: Session = Depends(get_db)):
 
 # Обновленный эндпоинт для получения данных таблицы с фильтрацией
 @app.get("/data/{table_name}")
-def read_table_data(table_name: str, db: Session = Depends(get_db), filters: Optional[str] = Query(None)):
+def read_table_data(
+        table_name: str,
+        db: Session = Depends(get_db),
+        filters: Optional[str] = Query(None),
+        limit: int = 50,
+        offset: int = 0
+):
     if table_name not in metadata.tables:
         raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
-    table = Table(table_name, metadata, autoload_with=engine)
 
+    table = Table(table_name, metadata, autoload_with=engine)
     query = db.query(table)
 
     if filters:
         filter_criteria = []
         for filter_pair in filters.split(","):
             column, value = filter_pair.split("=")
-            if value:  # Проверяем, что значение не пустое
+            if value:
                 filter_criteria.append(getattr(table.c, column) == value)
         if filter_criteria:
             query = query.filter(or_(*filter_criteria))
 
-    result = query.all()
+    result = query.limit(limit).offset(offset).all()
     rows = [dict(row._mapping) for row in result]
     return {"rows": rows}
 
