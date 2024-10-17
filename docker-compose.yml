@@ -12,6 +12,19 @@ services:
     volumes:
       - postgres_data_for_labs:/var/lib/postgresql/data
       # - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Монтируем ваш SQL скрипт в каталог инициализации      №- /Users/groza_1337/PycharmProjects/BD_Gvozdkov/laba_5:/csv_files
+  backend:
+    build:
+      context: "./app/backend/"
+    environment:
+      DB_PORT: 5432
+      DB_ADDRESS: postgres
+    ports:
+      - "8000:8000"
+  frontend:
+    build:
+      context: "./app/frontend"
+    ports:
+      - "8082:80"
 
 
 volumes:
