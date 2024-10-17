@@ -4,9 +4,7 @@ import { useParams } from 'react-router-dom';
 import './TablePage.css';
 
 function TablePage() {
-  const apiUrl = import.meta.env.DEV
-  ? 'http://localhost:8000'   // Если мы в режиме разработки
-  : 'api';  // Если мы в продакшене
+  const apiUrl = import.meta.env.DEV ? 'http://localhost:8000' : 'api';
   const { tableName } = useParams();
   const [rows, setRows] = useState([]);
   const [newRow, setNewRow] = useState({});
@@ -15,24 +13,27 @@ function TablePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editRow, setEditRow] = useState({});
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({});
 
   useEffect(() => {
     fetchTableData();
-  }, [tableName]);
+  }, [tableName, filters]);
 
-  // Таймер для исчезновения ошибки
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
         setError(null);
-      }, 10000); // 10 секунд
-
+      }, 10000);
       return () => clearTimeout(timer);
     }
   }, [error]);
 
   const fetchTableData = () => {
-    axios.get(`${apiUrl}/data/${tableName}`)
+    const filterParams = Object.entries(filters)
+      .map(([key, value]) => `${key}=${value}`)
+      .join(',');
+
+    axios.get(`${apiUrl}/data/${tableName}`, { params: { filters: filterParams } })
       .then((response) => {
         setRows(response.data.rows);
         if (response.data.rows.length > 0) {
@@ -74,31 +75,17 @@ function TablePage() {
       })
       .catch((error) => {
         console.error("Error creating row:", error);
-        if (error.response && error.response.data && error.response.data.detail) {
-          setError(error.response.data.detail);
-        } else {
-          setError("An unexpected error occurred.");
-        }
+        setError(error.response?.data?.detail || "An unexpected error occurred.");
       });
   };
 
   const handleDelete = (id) => {
-    if (primaryKey && id !== undefined) {
-      axios.delete(`${apiUrl}/data/${tableName}/${id}`)
-        .then(() => {
-          fetchTableData();
-        })
-        .catch((error) => {
-          console.error("Error deleting row:", error);
-          if (error.response && error.response.data && error.response.data.detail) {
-            setError(error.response.data.detail);
-          } else {
-            setError("An unexpected error occurred.");
-          }
-        });
-    } else {
-      console.error("Primary key or id is undefined. Cannot delete row.");
-    }
+    axios.delete(`${apiUrl}/data/${tableName}/${id}`)
+      .then(() => fetchTableData())
+      .catch((error) => {
+        console.error("Error deleting row:", error);
+        setError(error.response?.data?.detail || "An unexpected error occurred.");
+      });
   };
 
   const startEditRow = (row) => {
@@ -119,13 +106,21 @@ function TablePage() {
       })
       .catch((error) => {
         console.error("Error updating row:", error);
-        if (error.response && error.response.data && error.response.data.detail) {
-          setError(error.response.data.detail);
-        } else {
-          setError("An unexpected error occurred.");
-        }
+        setError(error.response?.data?.detail || "An unexpected error occurred.");
       });
   };
+
+  const handleFilterChange = (e, column) => {
+  const value = e.target.value;
+
+  if (value) {
+    setFilters({ ...filters, [column]: value });
+  } else {
+    const updatedFilters = { ...filters };
+    delete updatedFilters[column];
+    setFilters(updatedFilters);
+  }
+};
 
   return (
     <div className="table-page">
@@ -135,8 +130,17 @@ function TablePage() {
         <table className="data-table">
           <thead>
             <tr>
-              {columns.map((col, index) => (
-                <th key={index}>{col}</th>
+              {columns.map((col) => (
+                <th key={col}>
+                  {col}
+                  <input
+                    type="text"
+                    placeholder={`Filter by ${col}`}
+                    value={filters[col] || ''}
+                    onChange={(e) => handleFilterChange(e, col)}
+                    className="filter-input"
+                  />
+                </th>
               ))}
               <th>Действия</th>
             </tr>
@@ -144,21 +148,21 @@ function TablePage() {
           <tbody>
             {rows.map((row) => (
               <tr key={row[primaryKey]}>
-                {columns.map((col, index) => (
-                  <td key={index}>{row[col]}</td>
+                {columns.map((col) => (
+                  <td key={col}>{row[col]}</td>
                 ))}
                 <td>
-                  <button className="edit-btn" onClick={() => startEditRow(row)}>Редактировать</button>
-                  <button className="delete-btn" onClick={() => handleDelete(row[primaryKey])}>Удалить</button>
+                  <button onClick={() => startEditRow(row)}>Редактировать</button>
+                  <button onClick={() => handleDelete(row[primaryKey])}>Удалить</button>
                 </td>
               </tr>
             ))}
             <tr>
-              {columns.map((col, index) => (
+              {columns.map((col) => (
                 col === primaryKey ? (
-                  <td key={index}><em>Auto-generated</em></td>
+                  <td key={col}><em>Auto-generated</em></td>
                 ) : (
-                  <td key={index}>
+                  <td key={col}>
                     <input
                       type="text"
                       value={newRow[col] || ''}
@@ -168,18 +172,17 @@ function TablePage() {
                 )
               ))}
               <td>
-                <button className="add-btn" onClick={handleCreate}>Добавить</button>
+                <button onClick={handleCreate}>Добавить</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-
       {isEditing && (
         <div className="edit-modal">
           <h3>Редактирование записи</h3>
-          {columns.map((col, index) => (
-            <div key={index}>
+          {columns.map((col) => (
+            <div key={col}>
               <label>{col}</label>
               <input
                 type="text"

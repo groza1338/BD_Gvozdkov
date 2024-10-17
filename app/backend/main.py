@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status, Body, Depends
+from fastapi import FastAPI, HTTPException, status, Body, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, EmailStr, ValidationError, validator
@@ -8,9 +8,10 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from database import SessionLocal, engine, Base
 from models import UserAccount
-from sqlalchemy import inspect, Table, MetaData
+from sqlalchemy import inspect, Table, MetaData, or_
 import re
 from deep_translator import GoogleTranslator
+from typing import List, Optional
 
 # Конфигурация безопасности
 SECRET_KEY = "secretkey"
@@ -222,14 +223,26 @@ def get_tables(db: Session = Depends(get_db)):
     tables = inspector.get_table_names()
     return {"tables": tables}
 
-# Эндпоинт для получения данных таблицы
+
+# Обновленный эндпоинт для получения данных таблицы с фильтрацией
 @app.get("/data/{table_name}")
-def read_table_data(table_name: str, db: Session = Depends(get_db)):
+def read_table_data(table_name: str, db: Session = Depends(get_db), filters: Optional[str] = Query(None)):
     if table_name not in metadata.tables:
         raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
     table = Table(table_name, metadata, autoload_with=engine)
-    query = db.query(table).statement
-    result = db.execute(query).fetchall()
+
+    query = db.query(table)
+
+    if filters:
+        filter_criteria = []
+        for filter_pair in filters.split(","):
+            column, value = filter_pair.split("=")
+            if value:  # Проверяем, что значение не пустое
+                filter_criteria.append(getattr(table.c, column) == value)
+        if filter_criteria:
+            query = query.filter(or_(*filter_criteria))
+
+    result = query.all()
     rows = [dict(row._mapping) for row in result]
     return {"rows": rows}
 
