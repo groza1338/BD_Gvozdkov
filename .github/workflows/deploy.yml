@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-deploy-frontend:
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -28,8 +29,14 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/bd_labs_frontend:latest
 
+    # Игнорируем изменения в файлах, которые не затрагивают код
+    paths-ignore:
+      - 'README.md'
+      - '**/*.md'
+
   build-and-deploy-backend:
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -49,6 +56,10 @@ jobs:
           context: ./app/backend
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/bd_labs_backend:latest
+
+    paths-ignore:
+      - 'README.md'
+      - '**/*.md'
 
   deploy:
     runs-on: ubuntu-latest
