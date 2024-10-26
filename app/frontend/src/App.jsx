@@ -15,6 +15,7 @@ function App() {
         <Route path="/admin" element={<AdminPage />}>
           <Route path=":tableName" element={<TablePage />} />
         </Route>
+
         <Route path="/analytics" element={<AnalyticsPage />} /> {/* Новый маршрут для аналитики */}
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/" element={<Navigate to="/login" />} />
