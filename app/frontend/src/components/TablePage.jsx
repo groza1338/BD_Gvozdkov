@@ -20,10 +20,10 @@ function TablePage() {
   const limit = 50;
 
   useEffect(() => {
-    // Сброс offset при изменении tableName
-    setOffset(0);
-    setRows([]); // Очищаем текущие данные перед загрузкой новой таблицы
-    setHasMore(true); // Сбрасываем состояние пагинации
+    setOffset(0);         // Сбрасываем offset
+    setRows([]);          // Очищаем данные
+    setNewRow({});        // Очищаем поля для новой строки
+    setHasMore(true);     // Возвращаем состояние hasMore на true
   }, [tableName]);
 
   useEffect(() => {
@@ -49,8 +49,8 @@ function TablePage() {
     })
       .then((response) => {
         const newRows = response.data.rows;
-        if (newRows.length < limit) setHasMore(false);
         setRows(offset === 0 ? newRows : [...rows, ...newRows]);
+        setHasMore(newRows.length === limit); // Устанавливаем hasMore только если длина данных равна лимиту
 
         if (newRows.length > 0) {
           const columns = Object.keys(newRows[0]);
@@ -97,7 +97,10 @@ function TablePage() {
 
   const handleDelete = (id) => {
     axios.delete(`${apiUrl}/data/${tableName}/${id}`)
-      .then(() => fetchTableData())
+      .then(() => {
+        // Обновляем состояние rows, чтобы убрать удаленную строку
+        setRows(rows.filter(row => row[primaryKey] !== id));
+      })
       .catch((error) => {
         console.error("Error deleting row:", error);
         setError(error.response?.data?.detail || "An unexpected error occurred.");
@@ -127,21 +130,21 @@ function TablePage() {
   };
 
   const handleFilterChange = (e, column) => {
-  const value = e.target.value;
+    const value = e.target.value;
 
-  if (value) {
-    setFilters({ ...filters, [column]: value });
-  } else {
-    const updatedFilters = { ...filters };
-    delete updatedFilters[column];
-    setFilters(updatedFilters);
-  }
-};
+    if (value) {
+      setFilters({ ...filters, [column]: value });
+    } else {
+      const updatedFilters = { ...filters };
+      delete updatedFilters[column];
+      setFilters(updatedFilters);
+    }
+  };
 
-
-const loadMoreRows = () => {
+  const loadMoreRows = () => {
     setOffset(offset + limit);
   };
+
   return (
     <div className="table-page">
       <h2>Таблица: {tableName}</h2>
@@ -155,7 +158,7 @@ const loadMoreRows = () => {
                   {col}
                   <input
                     type="text"
-                    placeholder={`Filter by ${col}`}
+                    placeholder={`Фильтр по ${col}`}
                     value={filters[col] || ''}
                     onChange={(e) => handleFilterChange(e, col)}
                     className="filter-input"
@@ -172,8 +175,10 @@ const loadMoreRows = () => {
                   <td key={col}>{row[col]}</td>
                 ))}
                 <td>
-                  <button onClick={() => startEditRow(row)}>Редактировать</button>
-                  <button onClick={() => handleDelete(row[primaryKey])}>Удалить</button>
+                  <div className="action-container">
+                    <button onClick={() => startEditRow(row)} className="edit-btn">Редактировать</button>
+                    <button onClick={() => handleDelete(row[primaryKey])} className="delete-btn">Удалить</button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -187,17 +192,21 @@ const loadMoreRows = () => {
                       type="text"
                       value={newRow[col] || ''}
                       onChange={(e) => handleInputChange(e, col)}
+                      placeholder={`Введите ${col}`}
+                      className="add-input"
                     />
                   </td>
                 )
               ))}
               <td>
-                <button onClick={handleCreate}>Добавить</button>
+                <button onClick={handleCreate} className="add-btn">Добавить</button>
               </td>
             </tr>
           </tbody>
         </table>
-        {hasMore && <button onClick={loadMoreRows} className="load-more-btn">Загрузить еще</button>}
+        {rows.length > 0 && hasMore && (
+          <button onClick={loadMoreRows} className="pagination-button">Загрузить еще</button>
+        )}
       </div>
       {isEditing && (
         <div className="edit-modal">

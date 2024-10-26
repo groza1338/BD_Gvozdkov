@@ -1,11 +1,13 @@
 /* TablePage.css */
 
+/* Основной стиль страницы */
 .table-page {
-  padding: 30px;
+  padding: 20px;
   font-family: Arial, sans-serif;
   background-color: #f3f4f7;
 }
 
+/* Заголовок */
 h2 {
   text-align: center;
   font-size: 28px;
@@ -14,6 +16,7 @@ h2 {
   font-weight: bold;
 }
 
+/* Стиль таблицы */
 .table-container {
   overflow-x: auto;
   background-color: #fff;
@@ -25,7 +28,6 @@ h2 {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
 }
 
 .data-table th,
@@ -49,39 +51,60 @@ h2 {
   background-color: #f1f1f1;
 }
 
-/* Универсальный стиль кнопок */
-button {
-  padding: 10px 20px;
+/* Стиль инпутов для фильтров */
+.filter-input,
+.add-input {
+  width: 90%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Стиль кнопок */
+.edit-btn {
+  background-color: #007bff;
+  color: white;
+  padding: 8px 16px;
+  margin-bottom: 5px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-/* Стиль для кнопок "Добавить", "Редактировать", "Удалить" */
-.add-btn, .edit-btn, .delete-btn {
-  margin-right: 5px;
-  padding: 8px;
   font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.edit-btn:hover {
+  background-color: #0056b3;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+  background-color: #c82333;
 }
 
 .add-btn {
   background-color: #28a745;
-  color: #fff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.edit-btn {
-  background-color: #007bff;
-  color: #fff;
-}
-
-.delete-btn {
-  background-color: #f44336;
-  color: #fff;
+.add-btn:hover {
+  background-color: #218838;
 }
 
 /* Общий стиль для кнопки пагинации */
@@ -109,27 +132,4 @@ button:hover {
   background-color: #1e7e34;
   box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.2);
   transform: translateY(2px);
-}
-
-/* Модальное окно для редактирования записи */
-.edit-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  z-index: 10;
-}
-
-.edit-modal h3 {
-  margin-bottom: 10px;
-  color: #333;
-  font-weight: bold;
-}
-
-.edit-modal button {
-  margin-right: 10px;
 }
