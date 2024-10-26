@@ -4,9 +4,7 @@ import Register from './components/Register';
 import CategoriesPage from './components/CategoriesPage';
 import TablePage from "./components/TablePage.jsx";
 import AdminPage from "./components/AdminPage.jsx";
-
-
-
+import AnalyticsPage from "./components/AnalyticsPage.jsx";
 
 function App() {
   return (
@@ -17,9 +15,8 @@ function App() {
         <Route path="/admin" element={<AdminPage />}>
           <Route path=":tableName" element={<TablePage />} />
         </Route>
+        <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
-
-        {/* Добавляем редирект с "/" на "/login" */}
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Router>

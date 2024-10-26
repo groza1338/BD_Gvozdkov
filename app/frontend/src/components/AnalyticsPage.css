@@ -1,0 +1,28 @@
+/* AnalyticsPage.css */
+
+.analytics-page {
+  padding: 20px;
+}
+
+.query-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.query-selector button {
+  padding: 8px 12px;
+  border: none;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.query-selector button.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.query-selector button:hover:not(.active) {
+  background-color: #e0e0e0;
+}

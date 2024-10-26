@@ -354,14 +354,31 @@ def get_out_of_stock_products(limit: int = 50, offset: int = 0, db: Session = De
     out_of_stock_products = db.query(Product).filter(Product.quantity_in_stock == 0).offset(offset).limit(limit).all()
     return {"rows": [product.__dict__ for product in out_of_stock_products]}
 
-# 3. Заказы в доставке
+# 3. Заказы в процессе доставки (доставка в статусе in_transit)
 @app.get("/analytics/orders-in-delivery")
 def get_orders_in_delivery(limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
-    orders_in_delivery = db.query(CustomerOrder).filter(CustomerOrder.status == "in_delivery").offset(offset).limit(limit).all()
+    orders_in_delivery = (
+        db.query(CustomerOrder)
+        .join(Delivery, CustomerOrder.order_id == Delivery.order_id)
+        .filter(Delivery.delivery_status == 'in_transit')
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
     return {"rows": [order.__dict__ for order in orders_in_delivery]}
+
 
 # 4. Отзывы на товар по ID
 @app.get("/analytics/product-reviews")
 def get_product_reviews(product_id: int, limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
-    product_reviews = db.query(Review).filter(Review.product_id == product_id).offset(offset).limit(limit).all()
+    if not product_id:
+        raise HTTPException(status_code=400, detail="product_id is required")
+
+    product_reviews = (
+        db.query(Review)
+        .filter(Review.product_id == product_id)
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
     return {"rows": [review.__dict__ for review in product_reviews]}
