@@ -46,15 +46,15 @@ function AnalyticsPage() {
     setOffset((prevOffset) => prevOffset + limit);
   };
 
-  const handleFetchReviews = () => {
-    if (productId) {
-      setCurrentQuery('product-reviews');
+  // useEffect для отправки запроса при изменении productId
+  useEffect(() => {
+    if (currentQuery === 'product-reviews' && productId) {
       setOffset(0);
       setRows([]);
       setHasMore(true);
       fetchAnalyticsData('product-reviews', { product_id: productId });
     }
-  };
+  }, [productId]);
 
   return (
     <div className="analytics-page">
@@ -69,23 +69,22 @@ function AnalyticsPage() {
         <button onClick={() => handleAnalyticsSelection('orders-in-delivery')}>
           Заказы в доставке
         </button>
-        <button onClick={() => handleAnalyticsSelection('products-reviews')}>
+        <button onClick={() => handleAnalyticsSelection('product-reviews')}>
           Отзывы на товары
         </button>
       </div>
-      { currentQuery === 'products-reviews' &&
-          <div className="product-review-section">
-        <input
+      {currentQuery === 'product-reviews' && (
+        <div className="product-review-section">
+          <input
             type="number"
             placeholder="Введите ID товара"
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
-        />
-        <button onClick={handleFetchReviews}>Показать отзывы</button>
-      </div>}
+          />
+        </div>
+      )}
       {currentQuery === 'product-reviews' && productId && (
-
-          <h3>Отзывы на товар с ID: {productId}</h3>
+        <h3>Отзывы на товар с ID: {productId}</h3>
       )}
       <div className="table-container">
         <table className="data-table">
