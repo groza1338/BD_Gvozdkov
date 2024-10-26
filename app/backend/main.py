@@ -12,6 +12,7 @@ from sqlalchemy import inspect, Table, MetaData, or_
 import re
 from deep_translator import GoogleTranslator
 from typing import List, Optional
+from models import Product, CustomerOrder, Delivery, Review
 
 # Конфигурация безопасности
 SECRET_KEY = "secretkey"
@@ -339,3 +340,28 @@ def get_useraccount_fields():
     columns = inspector.get_columns("useraccount")
     fields = [{"name": column["name"], "nullable": column["nullable"]} for column in columns if column["name"] not in ["user_id", "role"]]
     return {"fields": fields}
+
+
+# 1. Список товаров в наличии
+@app.get("/analytics/available-products")
+def get_available_products(limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
+    available_products = db.query(Product).filter(Product.quantity_in_stock > 0).offset(offset).limit(limit).all()
+    return {"rows": [product.__dict__ for product in available_products]}
+
+# 2. Список товаров, которые кончились
+@app.get("/analytics/out-of-stock-products")
+def get_out_of_stock_products(limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
+    out_of_stock_products = db.query(Product).filter(Product.quantity_in_stock == 0).offset(offset).limit(limit).all()
+    return {"rows": [product.__dict__ for product in out_of_stock_products]}
+
+# 3. Заказы в доставке
+@app.get("/analytics/orders-in-delivery")
+def get_orders_in_delivery(limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
+    orders_in_delivery = db.query(CustomerOrder).filter(CustomerOrder.status == "in_delivery").offset(offset).limit(limit).all()
+    return {"rows": [order.__dict__ for order in orders_in_delivery]}
+
+# 4. Отзывы на товар по ID
+@app.get("/analytics/product-reviews")
+def get_product_reviews(product_id: int, limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
+    product_reviews = db.query(Review).filter(Review.product_id == product_id).offset(offset).limit(limit).all()
+    return {"rows": [review.__dict__ for review in product_reviews]}
