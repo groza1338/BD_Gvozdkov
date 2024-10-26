@@ -20,10 +20,10 @@ function TablePage() {
   const limit = 50;
 
   useEffect(() => {
-    setOffset(0);         // Сбрасываем offset
-    setRows([]);          // Очищаем данные
-    setNewRow({});        // Очищаем поля для новой строки
-    setHasMore(true);     // Возвращаем состояние hasMore на true
+    setOffset(0);
+    setRows([]);
+    setNewRow({});
+    setHasMore(true);
   }, [tableName]);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ function TablePage() {
       .then((response) => {
         const newRows = response.data.rows;
         setRows(offset === 0 ? newRows : [...rows, ...newRows]);
-        setHasMore(newRows.length === limit); // Устанавливаем hasMore только если длина данных равна лимиту
+        setHasMore(newRows.length === limit);
 
         if (newRows.length > 0) {
           const columns = Object.keys(newRows[0]);
@@ -98,7 +98,6 @@ function TablePage() {
   const handleDelete = (id) => {
     axios.delete(`${apiUrl}/data/${tableName}/${id}`)
       .then(() => {
-        // Обновляем состояние rows, чтобы убрать удаленную строку
         setRows(rows.filter(row => row[primaryKey] !== id));
       })
       .catch((error) => {
@@ -129,6 +128,11 @@ function TablePage() {
       });
   };
 
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditRow({});
+  };
+
   const handleFilterChange = (e, column) => {
     const value = e.target.value;
 
@@ -152,80 +156,82 @@ function TablePage() {
       <div className="table-container">
         <table className="data-table">
           <thead>
-          <tr>
-            {columns.map((col) => (
+            <tr>
+              {columns.map((col) => (
                 <th key={col}>
                   {col}
                   <input
-                      type="text"
-                      placeholder={`Фильтр по ${col}`}
-                      value={filters[col] || ''}
-                      onChange={(e) => handleFilterChange(e, col)}
-                      className="filter-input"
+                    type="text"
+                    placeholder={`Фильтр по ${col}`}
+                    value={filters[col] || ''}
+                    onChange={(e) => handleFilterChange(e, col)}
+                    className="filter-input"
                   />
                 </th>
-            ))}
-            <th>Действия</th>
-          </tr>
+              ))}
+              <th>Действия</th>
+            </tr>
           </thead>
           <tbody>
-          {rows.map((row) => (
+            {rows.map((row) => (
               <tr key={row[primaryKey]}>
                 {columns.map((col) => (
-                    <td key={col}>{row[col]}</td>
+                  <td key={col}>
+                    {isEditing && editRow[primaryKey] === row[primaryKey] ? (
+                      <input
+                        type="text"
+                        value={editRow[col] || ''}
+                        onChange={(e) => handleEditChange(e, col)}
+                        disabled={col === primaryKey}
+                      />
+                    ) : (
+                      row[col]
+                    )}
+                  </td>
                 ))}
                 <td>
                   <div className="action-container">
-                    <button onClick={() => startEditRow(row)} className="edit-btn">Редактировать</button>
-                    <button onClick={() => handleDelete(row[primaryKey])} className="delete-btn">Удалить</button>
+                    {isEditing && editRow[primaryKey] === row[primaryKey] ? (
+                      <>
+                        <button onClick={handleEditSave} className="save-btn">Сохранить</button>
+                        <button onClick={cancelEdit} className="cancel-btn">Отмена</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => startEditRow(row)} className="edit-btn">Редактировать</button>
+                        <button onClick={() => handleDelete(row[primaryKey])} className="delete-btn">Удалить</button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
-          ))}
-          <tr>
-            {columns.map((col) => (
-                col === primaryKey ? (
-                    <td key={col}><em>Auto-generated</em></td>
-                ) : (
-                    <td key={col}>
-                      <input
-                          type="text"
-                          value={newRow[col] || ''}
-                          onChange={(e) => handleInputChange(e, col)}
-                          placeholder={`Введите ${col}`}
-                          className="add-input"
-                      />
-                    </td>
-                )
             ))}
-            <td>
-              <button onClick={handleCreate} className="add-btn">Добавить</button>
-            </td>
-          </tr>
+            <tr>
+              {columns.map((col) => (
+                col === primaryKey ? (
+                  <td key={col}><em>Auto-generated</em></td>
+                ) : (
+                  <td key={col}>
+                    <input
+                      type="text"
+                      value={newRow[col] || ''}
+                      onChange={(e) => handleInputChange(e, col)}
+                      placeholder={`Введите ${col}`}
+                      className="add-input"
+                    />
+                  </td>
+                )
+              ))}
+              <td>
+                <button onClick={handleCreate} className="add-btn">Добавить</button>
+              </td>
+            </tr>
           </tbody>
         </table>
         {rows.length > 0 && hasMore && (
-            <button onClick={loadMoreRows} className="pagination-button">Загрузить еще</button>
+          <button onClick={loadMoreRows} className="pagination-button">Загрузить еще</button>
         )}
       </div>
-      {isEditing && (
-          <div className="edit-modal">
-            <h3>Редактирование записи</h3>
-            {columns.map((col) => (
-                <div key={col}>
-                  <label>{col}</label>
-                  <input
-                      type="text"
-                      value={editRow[col] || ''}
-                      onChange={(e) => handleEditChange(e, col)}
-                      disabled={col === primaryKey}
-                  />
-                </div>
-            ))}
-            <button onClick={handleEditSave}>Сохранить</button>
-            <button onClick={() => setIsEditing(false)}>Отмена</button>
-          </div>
-      )}
     </div>
   );
 }
