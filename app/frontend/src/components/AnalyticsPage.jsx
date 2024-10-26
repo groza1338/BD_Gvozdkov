@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import './AnalyticsPage.css';
 
 function AnalyticsPage() {
   const apiUrl = import.meta.env.DEV ? 'http://localhost:8000' : 'api';
@@ -47,6 +48,10 @@ function AnalyticsPage() {
 
   const handleFetchReviews = () => {
     if (productId) {
+      setCurrentQuery('product-reviews');
+      setOffset(0);
+      setRows([]);
+      setHasMore(true);
       fetchAnalyticsData('product-reviews', { product_id: productId });
     }
   };
@@ -64,16 +69,24 @@ function AnalyticsPage() {
         <button onClick={() => handleAnalyticsSelection('orders-in-delivery')}>
           Заказы в доставке
         </button>
-        <div className="product-review-section">
-          <input
+        <button onClick={() => handleAnalyticsSelection('products-reviews')}>
+          Отзывы на товары
+        </button>
+      </div>
+      { currentQuery === 'products-reviews' &&
+          <div className="product-review-section">
+        <input
             type="number"
             placeholder="Введите ID товара"
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
-          />
-          <button onClick={handleFetchReviews}>Показать отзывы</button>
-        </div>
-      </div>
+        />
+        <button onClick={handleFetchReviews}>Показать отзывы</button>
+      </div>}
+      {currentQuery === 'product-reviews' && productId && (
+
+          <h3>Отзывы на товар с ID: {productId}</h3>
+      )}
       <div className="table-container">
         <table className="data-table">
           <thead>
