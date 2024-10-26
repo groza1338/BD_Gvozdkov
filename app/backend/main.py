@@ -382,3 +382,9 @@ def get_product_reviews(product_id: int, limit: int = 50, offset: int = 0, db: S
         .all()
     )
     return {"rows": [review.__dict__ for review in product_reviews]}
+
+# Новый эндпоинт для получения списка продуктов
+@app.get("/products")
+def get_products(db: Session = Depends(get_db)):
+    products = db.query(Product).all()
+    return {"products": [product.__dict__ for product in products]}

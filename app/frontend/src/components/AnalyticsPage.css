@@ -1,28 +1,156 @@
-/* AnalyticsPage.css */
-
 .analytics-page {
-  padding: 20px;
+  padding: 30px;
+  font-family: Arial, sans-serif;
+  background-color: #f3f4f7;
 }
 
-.query-selector {
-  display: flex;
-  gap: 10px;
+h2 {
+  text-align: center;
+  font-size: 28px;
+  color: #333;
   margin-bottom: 20px;
+  font-weight: bold;
 }
 
-.query-selector button {
-  padding: 8px 12px;
+.back-to-admin {
+  display: inline-block;
+  padding: 10px 15px;
+  margin-bottom: 20px;
+  background-color: #333;
+  color: white;
   border: none;
-  background-color: #f0f0f0;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
-.query-selector button.active {
-  background-color: #007bff;
-  color: white;
+.back-to-admin:hover {
+  background-color: #555;
 }
 
-.query-selector button:hover:not(.active) {
-  background-color: #e0e0e0;
+.analytics-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.analytics-buttons button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: bold;
+}
+
+.analytics-buttons button:hover {
+  background-color: #0056b3;
+}
+
+.product-review-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.product-review-section select {
+  width: 200px;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+}
+
+.table-container {
+  overflow-x: auto;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+.data-table th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  color: #333;
+}
+
+.data-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.data-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.load-more-btn {
+  display: block;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.load-more-btn:hover {
+  background-color: #218838;
+}
+
+
+/* Общий стиль для кнопки пагинации */
+.pagination-button {
+  display: block;
+  margin: 20px auto;
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #28a745;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.pagination-button:hover {
+  background-color: #218838;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.pagination-button:active {
+  background-color: #1e7e34;
+  box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.2);
+  transform: translateY(2px);
 }
