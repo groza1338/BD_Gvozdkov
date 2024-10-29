@@ -96,6 +96,6 @@ jobs:
             port: ${{ secrets.SERVER_PORT }}
             script: |
               cd bd_labs
-              cd BD_GVOZDKOV
+              cd BD_Gvozdkov
               git pull
               docker-compose up -d --force-recreate
