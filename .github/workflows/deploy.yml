@@ -98,4 +98,4 @@ jobs:
               cd bd_labs
               cd BD_Gvozdkov
               git pull
-              docker-compose up -d --force-recreate
+              docker compose up -d --force-recreate
