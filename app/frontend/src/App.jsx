@@ -6,6 +6,9 @@ import CategoriesPage from './components/CategoriesPage';
 import TablePage from './components/TablePage';
 import AdminPage from './components/AdminPage';
 import AnalyticsPage from './components/AnalyticsPage';
+const publicDirUrl = import.meta.env.DEV
+  ? '/public/'   // Если мы в режиме разработки
+  : '/';  // Если мы в продакшене
 
 function App() {
   useEffect(() => {
@@ -25,9 +28,9 @@ function App() {
     // Обработчик события visibilitychange
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        changeFavicon('/public/inactive.svg'); // Используем favicon для неактивной вкладки
+        changeFavicon(`${publicDirUrl}inactive.svg`); // Используем favicon для неактивной вкладки
       } else {
-        changeFavicon('/public/postgres.svg'); // Используем favicon для активной вкладки
+        changeFavicon(`${publicDirUrl}postgres.svg`); // Используем favicon для активной вкладки
       }
     };
 
