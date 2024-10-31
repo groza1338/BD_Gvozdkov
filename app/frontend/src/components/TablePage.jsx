@@ -14,13 +14,11 @@ function TablePage() {
   const [editRow, setEditRow] = useState({});
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({});
-  const [offset, setOffset] = useState(0);
+  const [limit, setLimit] = useState(50);
   const [hasMore, setHasMore] = useState(true);
 
-  const limit = 50;
-
   useEffect(() => {
-    setOffset(0);
+    setLimit(50);
     setRows([]);
     setNewRow({});
     setHasMore(true);
@@ -28,7 +26,7 @@ function TablePage() {
 
   useEffect(() => {
     fetchTableData();
-  }, [tableName, filters, offset]);
+  }, [tableName, filters, limit]);
 
   useEffect(() => {
     if (error) {
@@ -45,11 +43,11 @@ function TablePage() {
       .join(',');
 
     axios.get(`${apiUrl}/data/${tableName}`, {
-      params: { filters: filterParams, limit, offset }
+      params: { filters: filterParams, limit }
     })
       .then((response) => {
         const newRows = response.data.rows;
-        setRows(offset === 0 ? newRows : [...rows, ...newRows]);
+        setRows(newRows);
         setHasMore(newRows.length === limit);
 
         if (newRows.length > 0) {
@@ -146,7 +144,7 @@ function TablePage() {
   };
 
   const loadMoreRows = () => {
-    setOffset(offset + limit);
+    setLimit(limit + 50); // Увеличиваем лимит при каждом клике
   };
 
   return (
